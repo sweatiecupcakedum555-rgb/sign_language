@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>Sign Language Translator</title>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+
+<style>
+
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 15px;
+}
+
+#webcam-container {
+    display: flex;
+    justify-content: center;
+}
+
+#webcam-container canvas {
+    width: 100%;
+    max-width: 400px;
+    border-radius: 15px;
+}
+
+#status {
+    font-size: 16px;
+    margin-top: 10px;
+}
+
+#prediction {
+    font-size: 28px;
+    font-weight: bold;
+    margin-top: 15px;
+}
+
+#confidence {
+    font-size: 16px;
+    margin-top: 5px;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<h2>📷 Sign Language Camera</h2>
+
+<div id="webcam-container"></div>
+
+<div id="status">
+Loading AI...
+</div>
+
+<div id="prediction">
+Waiting...
+</div>
+
+<div id="confidence">
+</div>
+
+
+<script>
+
+
+// ======================================
+// PUT YOUR TEACHABLE MACHINE URL HERE
+// ======================================
+
+const MODEL_URL =
+"https://teachablemachine.withgoogle.com/models/o-o7o8OOw/";
+
+
+// ======================================
+// VARIABLES
+// ======================================
+
+let model;
+let webcam;
+
+
+// ======================================
+// SETTINGS
+// ======================================
+
+const CONFIDENCE_THRESHOLD = 0.80;
+
+const REQUIRED_FRAMES = 5;
+
+
+// ======================================
+// STABILITY VARIABLES
+// ======================================
+
+let previousPrediction = "";
+
+let predictionCount = 0;
+
+let lastSentPrediction = "";
+
+
+// ======================================
+// START CAMERA + AI
+// ======================================
+
+async function init() {
+
+    try {
+
+        document.getElementById("status").innerText =
+            "Loading AI model...";
+
+
+        // Load AI model
+
+        model = await tmImage.load(
+            MODEL_URL + "model.json",
+            MODEL_URL + "metadata.json"
+        );
+
+
+        document.getElementById("status").innerText =
+            "Starting camera...";
+
+
+        // Create webcam
+
+        webcam = new tmImage.Webcam(
+            400,
+            400,
+            true
+        );
+
+
+        await webcam.setup();
+
+        await webcam.play();
+
+
+        // Display camera
+
+        document
+            .getElementById("webcam-container")
+            .appendChild(webcam.canvas);
+
+
+        document.getElementById("status").innerText =
+            "Camera ready ✓";
+
+
+        // Start continuous recognition
+
+        window.requestAnimationFrame(loop);
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        document.getElementById("status").innerText =
+            "Camera could not start.";
+
+    }
+
+}
+
+
+// ======================================
+// CONTINUOUS LOOP
+// ======================================
+
+async function loop() {
+
+    webcam.update();
+
+    await predict();
+
+    window.requestAnimationFrame(loop);
+
+}
+
+
+// ======================================
+// RECOGNIZE SIGN
+// ======================================
+
+async function predict() {
+
+
+    const prediction =
+        await model.predict(webcam.canvas);
+
+
+    let highestProbability = 0;
+
+    let bestClass = "NOTHING";
+
+
+    // Find highest prediction
+
+    for (
+        let i = 0;
+        i < prediction.length;
+        i++
+    ) {
+
+        if (
+            prediction[i].probability
+            >
+            highestProbability
+        ) {
+
+            highestProbability =
+                prediction[i].probability;
+
+            bestClass =
+                prediction[i].className;
+
+        }
+
+    }
+
+
+    // Display confidence
+
+    document.getElementById(
+        "confidence"
+    ).innerText =
+
+        "Confidence: " +
+
+        Math.round(
+            highestProbability * 100
+        ) +
+
+        "%";
+
+
+    // ==================================
+    // CONFIDENCE CHECK
+    // ==================================
+
+    if (
+        highestProbability
+        >=
+        CONFIDENCE_THRESHOLD
+    ) {
+
+
+        // Same prediction
+
+        if (
+            bestClass
+            ===
+            previousPrediction
+        ) {
+
+            predictionCount++;
+
+        }
+
+        // New prediction
+
+        else {
+
+            previousPrediction =
+                bestClass;
+
+            predictionCount = 1;
+
+        }
+
+
+        // ==================================
+        // REQUIRE 5 MATCHES
+        // ==================================
+
+        if (
+            predictionCount
+            >=
+            REQUIRED_FRAMES
+        ) {
+
+
+            if (
+                lastSentPrediction
+                !==
+                bestClass
+            ) {
+
+                lastSentPrediction =
+                    bestClass;
+
+
+                sendToAppInventor(
+                    bestClass
+                );
+
+            }
+
+        }
+
+    }
+
+    else {
+
+        predictionCount = 0;
+
+        previousPrediction = "";
+
+    }
+
+}
+
+
+// ======================================
+// SEND RESULT TO APP INVENTOR
+// ======================================
+
+function sendToAppInventor(
+    result
+) {
+
+
+    document.getElementById(
+        "prediction"
+    ).innerText = result;
+
+
+    if (
+        window.AppInventor
+        &&
+        window.AppInventor.setWebViewString
+    ) {
+
+        window.AppInventor
+            .setWebViewString(
+                result
+            );
+
+    }
+
+}
+
+
+// ======================================
+// START
+// ======================================
+
+init();
+
+
+</script>
+
+</body>
+
+</html>
