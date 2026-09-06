@@ -1,189 +1,200 @@
 <!DOCTYPE html>
-
 <html>
-
 <head>
 
-<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0">
-
-<title>Sign Language Translator</title>
-
+<title>Sign Language Recognition</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
-
 <style>
 
 body {
+    margin: 0;
+    padding: 20px;
+    background: #f5f5f5;
     font-family: Arial, sans-serif;
     text-align: center;
-    margin: 0;
-    padding: 15px;
+}
+
+h1 {
+    font-size: 24px;
 }
 
 #webcam-container {
-    display: flex;
-    justify-content: center;
+    margin: 20px auto;
+    width: 300px;
+    height: 300px;
 }
 
 #webcam-container canvas {
-    width: 100%;
-    max-width: 400px;
+    width: 300px;
+    height: 300px;
     border-radius: 15px;
 }
 
-#status {
-    font-size: 16px;
+#result-title {
+    font-size: 18px;
+    margin-top: 20px;
+}
+
+#result {
+    font-size: 36px;
+    font-weight: bold;
     margin-top: 10px;
 }
 
-#prediction {
-    font-size: 28px;
-    font-weight: bold;
-    margin-top: 15px;
-}
-
-#confidence {
-    font-size: 16px;
-    margin-top: 5px;
+#error {
+    color: red;
+    margin-top: 20px;
 }
 
 </style>
 
 </head>
 
-
 <body>
 
-<h2>📷 Sign Language Camera</h2>
+<h1>Sign Language Recognition</h1>
 
 <div id="webcam-container"></div>
 
-<div id="status">
-Loading AI...
+<div id="result-title">
+    Recognized Sign:
 </div>
 
-<div id="prediction">
-Waiting...
+<div id="result">
+    Starting camera...
 </div>
 
-<div id="confidence">
-</div>
+<div id="error"></div>
 
 
 <script>
 
-
-// ======================================
-// PUT YOUR TEACHABLE MACHINE URL HERE
-// ======================================
+// =====================================================
+// PUT YOUR TEACHABLE MACHINE MODEL URL HERE
+// =====================================================
 
 const MODEL_URL =
-"https://teachablemachine.withgoogle.com/models/o-o7o8OOw/";
+"https://teachablemachine.withgoogle.com/models/iraL4g45n/";
 
 
-// ======================================
+// =====================================================
 // VARIABLES
-// ======================================
+// =====================================================
 
 let model;
 let webcam;
 
+let maxPredictions;
 
-// ======================================
-// SETTINGS
-// ======================================
+let lastWord = "";
+let candidateWord = "";
 
-const CONFIDENCE_THRESHOLD = 0.80;
+let stableFrames = 0;
 
-const REQUIRED_FRAMES = 5;
+const REQUIRED_STABLE_FRAMES = 3;
 
-
-// ======================================
-// STABILITY VARIABLES
-// ======================================
-
-let previousPrediction = "";
-
-let predictionCount = 0;
-
-let lastSentPrediction = "";
+const CONFIDENCE_THRESHOLD = 0.75;
 
 
-// ======================================
-// START CAMERA + AI
-// ======================================
+// =====================================================
+// START THE APP AUTOMATICALLY
+// =====================================================
 
-async function init() {
+window.addEventListener("load", function() {
+
+    startApp();
+
+});
+
+
+// =====================================================
+// START MODEL + CAMERA
+// =====================================================
+
+async function startApp() {
 
     try {
 
-        document.getElementById("status").innerText =
-            "Loading AI model...";
+        document.getElementById("result").innerText =
+            "Loading model...";
 
 
         // Load AI model
 
+        const modelURL = MODEL_URL + "model.json";
+
+        const metadataURL = MODEL_URL + "metadata.json";
+
         model = await tmImage.load(
-            MODEL_URL + "model.json",
-            MODEL_URL + "metadata.json"
+            modelURL,
+            metadataURL
         );
 
-
-        document.getElementById("status").innerText =
-            "Starting camera...";
+        maxPredictions = model.getTotalClasses();
 
 
         // Create webcam
 
+        const flip = true;
+
         webcam = new tmImage.Webcam(
-            400,
-            400,
-            true
+            300,
+            300,
+            flip
         );
 
 
+        // Request camera
+
         await webcam.setup();
+
+
+        // Start camera
 
         await webcam.play();
 
 
-        // Display camera
+        // Put camera on screen
 
         document
             .getElementById("webcam-container")
             .appendChild(webcam.canvas);
 
 
-        document.getElementById("status").innerText =
-            "Camera ready ✓";
+        document.getElementById("result").innerText =
+            "Show a sign";
 
 
-        // Start continuous recognition
+        // Start recognition loop
 
         window.requestAnimationFrame(loop);
 
+    }
 
-    } catch (error) {
+    catch(error) {
 
         console.error(error);
 
-        document.getElementById("status").innerText =
-            "Camera could not start.";
+        document.getElementById("result").innerText =
+            "Camera error";
+
+        document.getElementById("error").innerText =
+            "Could not start the camera.";
 
     }
 
 }
 
 
-// ======================================
-// CONTINUOUS LOOP
-// ======================================
+// =====================================================
+// CONTINUOUS RECOGNITION
+// =====================================================
 
 async function loop() {
 
@@ -196,12 +207,11 @@ async function loop() {
 }
 
 
-// ======================================
-// RECOGNIZE SIGN
-// ======================================
+// =====================================================
+// AI PREDICTION
+// =====================================================
 
 async function predict() {
-
 
     const prediction =
         await model.predict(webcam.canvas);
@@ -209,27 +219,22 @@ async function predict() {
 
     let highestProbability = 0;
 
-    let bestClass = "NOTHING";
+    let highestClass = "";
 
 
-    // Find highest prediction
+    // Find the class with the highest probability
 
-    for (
-        let i = 0;
-        i < prediction.length;
-        i++
-    ) {
+    for(let i = 0; i < maxPredictions; i++) {
 
-        if (
-            prediction[i].probability
-            >
+        if(
+            prediction[i].probability >
             highestProbability
         ) {
 
             highestProbability =
                 prediction[i].probability;
 
-            bestClass =
+            highestClass =
                 prediction[i].className;
 
         }
@@ -237,137 +242,112 @@ async function predict() {
     }
 
 
-    // Display confidence
+    // If confidence is too low
 
-    document.getElementById(
-        "confidence"
-    ).innerText =
-
-        "Confidence: " +
-
-        Math.round(
-            highestProbability * 100
-        ) +
-
-        "%";
-
-
-    // ==================================
-    // CONFIDENCE CHECK
-    // ==================================
-
-    if (
-        highestProbability
-        >=
+    if(
+        highestProbability <
         CONFIDENCE_THRESHOLD
     ) {
 
+        candidateWord = "";
 
-        // Same prediction
+        stableFrames = 0;
 
-        if (
-            bestClass
-            ===
-            previousPrediction
-        ) {
+        return;
 
-            predictionCount++;
-
-        }
-
-        // New prediction
-
-        else {
-
-            previousPrediction =
-                bestClass;
-
-            predictionCount = 1;
-
-        }
+    }
 
 
-        // ==================================
-        // REQUIRE 5 MATCHES
-        // ==================================
+    // Ignore the NOTHING class
 
-        if (
-            predictionCount
-            >=
-            REQUIRED_FRAMES
-        ) {
+    if(
+        highestClass.toUpperCase() === "NOTHING"
+    ) {
 
+        candidateWord = "";
 
-            if (
-                lastSentPrediction
-                !==
-                bestClass
-            ) {
+        stableFrames = 0;
 
-                lastSentPrediction =
-                    bestClass;
+        if(lastWord !== "") {
 
+            lastWord = "";
 
-                sendToAppInventor(
-                    bestClass
-                );
-
-            }
+            sendWordToApp("");
 
         }
+
+        return;
+
+    }
+
+
+    // Check whether prediction stayed the same
+
+    if(
+        highestClass === candidateWord
+    ) {
+
+        stableFrames++;
 
     }
 
     else {
 
-        predictionCount = 0;
+        candidateWord = highestClass;
 
-        previousPrediction = "";
+        stableFrames = 1;
+
+    }
+
+
+    // Accept prediction after a few stable frames
+
+    if(
+        stableFrames >=
+        REQUIRED_STABLE_FRAMES
+    ) {
+
+        if(
+            highestClass !== lastWord
+        ) {
+
+            lastWord = highestClass;
+
+            document.getElementById("result").innerText =
+                highestClass;
+
+
+            sendWordToApp(
+                highestClass
+            );
+
+        }
 
     }
 
 }
 
 
-// ======================================
-// SEND RESULT TO APP INVENTOR
-// ======================================
+// =====================================================
+// SEND WORD TO MIT APP INVENTOR
+// =====================================================
 
-function sendToAppInventor(
-    result
-) {
+function sendWordToApp(word) {
 
-
-    document.getElementById(
-        "prediction"
-    ).innerText = result;
-
-
-    if (
-        window.AppInventor
-        &&
+    if(
+        window.AppInventor &&
         window.AppInventor.setWebViewString
     ) {
 
-        window.AppInventor
-            .setWebViewString(
-                result
-            );
+        window.AppInventor.setWebViewString(
+            word
+        );
 
     }
 
 }
-
-
-// ======================================
-// START
-// ======================================
-
-init();
-
 
 </script>
 
 </body>
-
 </html>
