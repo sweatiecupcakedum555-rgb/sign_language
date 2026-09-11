@@ -1,351 +1,431 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Language Translator</title>
 
-<title>Sign Language Recognition</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
 
-<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            min-height: 100%;
+            background: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
 
-<style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-body {
-    margin: 0;
-    padding: 20px;
-    background: #f5f5f5;
-    font-family: Arial, sans-serif;
-    text-align: center;
-}
+        h1 {
+            font-size: 28px;
+            margin: 20px 10px;
+        }
 
-h1 {
-    font-size: 24px;
-}
+        #cameraContainer {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: black;
+        }
 
-#webcam-container {
-    margin: 20px auto;
-    width: 300px;
-    height: 300px;
-}
+        #video {
+            width: 90%;
+            max-width: 400px;
+            height: auto;
+            background: black;
+            border-radius: 10px;
+            object-fit: cover;
+        }
 
-#webcam-container canvas {
-    width: 300px;
-    height: 300px;
-    border-radius: 15px;
-}
+        #resultTitle {
+            margin-top: 25px;
+            font-size: 22px;
+        }
 
-#result-title {
-    font-size: 18px;
-    margin-top: 20px;
-}
+        #result {
+            margin-top: 10px;
+            font-size: 40px;
+            font-weight: bold;
+            min-height: 55px;
+        }
 
-#result {
-    font-size: 36px;
-    font-weight: bold;
-    margin-top: 10px;
-}
+        #status {
+            margin-top: 10px;
+            font-size: 16px;
+            color: #cccccc;
+        }
 
-#error {
-    color: red;
-    margin-top: 20px;
-}
+        button {
+            margin-top: 20px;
+            padding: 12px 24px;
+            font-size: 18px;
+            border: none;
+            border-radius: 8px;
+            background: white;
+            color: black;
+            cursor: pointer;
+        }
 
-</style>
-
+        button:active {
+            transform: scale(0.97);
+        }
+    </style>
 </head>
 
 <body>
 
-<h1>Sign Language Recognition</h1>
+    <h1>SIGN LANGUAGE TRANSLATOR</h1>
 
-<div id="webcam-container"></div>
+    <div id="cameraContainer">
+        <video id="video" autoplay playsinline></video>
+    </div>
 
-<div id="result-title">
-    Recognized Sign:
-</div>
+    <button id="switchButton">Switch Camera</button>
 
-<div id="result">
-    Starting camera...
-</div>
+    <div id="resultTitle">
+        Recognised Sign:
+    </div>
 
-<div id="error"></div>
+    <div id="result">
+        Loading model...
+    </div>
+
+    <div id="status">
+        Starting camera...
+    </div>
 
 
 <script>
 
-// =====================================================
-// PUT YOUR TEACHABLE MACHINE MODEL URL HERE
-// =====================================================
+    // =========================================================
+    // YOUR TEACHABLE MACHINE MODEL
+    // =========================================================
 
-const MODEL_URL =
-"https://teachablemachine.withgoogle.com/models/iraL4g45n/";
+    const MODEL_URL = "https://teachablemachine.withgoogle.com/models/y6rWUQuIT/";
 
 
-// =====================================================
-// VARIABLES
-// =====================================================
 
-let model;
-let webcam;
+    // =========================================================
+    // VARIABLES
+    // =========================================================
 
-let maxPredictions;
+    let model;
+    let video;
+    let stream;
 
-let lastWord = "";
-let candidateWord = "";
+    let usingFrontCamera = true;
 
-let stableFrames = 0;
+    let lastWord = "";
+    let stableWord = "";
+    let stableCount = 0;
 
-const REQUIRED_STABLE_FRAMES = 3;
+    const STABLE_FRAMES = 3;
+    const CONFIDENCE_THRESHOLD = 0.75;
 
-const CONFIDENCE_THRESHOLD = 0.75;
 
 
-// =====================================================
-// START THE APP AUTOMATICALLY
-// =====================================================
+    // =========================================================
+    // START
+    // =========================================================
 
-window.addEventListener("load", function() {
+    window.onload = async function () {
 
-    startApp();
+        video = document.getElementById("video");
 
-});
+        document.getElementById("switchButton")
+            .addEventListener("click", switchCamera);
 
+        try {
 
-// =====================================================
-// START MODEL + CAMERA
-// =====================================================
+            document.getElementById("status").innerText =
+                "Loading model...";
 
-async function startApp() {
-
-    try {
-
-        document.getElementById("result").innerText =
-            "Loading model...";
-
-
-        // Load AI model
-
-        const modelURL = MODEL_URL + "model.json";
-
-        const metadataURL = MODEL_URL + "metadata.json";
-
-        model = await tmImage.load(
-            modelURL,
-            metadataURL
-        );
-
-        maxPredictions = model.getTotalClasses();
-
-
-        // Create webcam
-
-        const flip = true;
-
-        webcam = new tmImage.Webcam(
-            300,
-            300,
-            flip
-        );
-
-
-        // Request camera
-
-        await webcam.setup();
-
-
-        // Start camera
-
-        await webcam.play();
-
-
-        // Put camera on screen
-
-        document
-            .getElementById("webcam-container")
-            .appendChild(webcam.canvas);
-
-
-        document.getElementById("result").innerText =
-            "Show a sign";
-
-
-        // Start recognition loop
-
-        window.requestAnimationFrame(loop);
-
-    }
-
-    catch(error) {
-
-        console.error(error);
-
-        document.getElementById("result").innerText =
-            "Camera error";
-
-        document.getElementById("error").innerText =
-            "Could not start the camera.";
-
-    }
-
-}
-
-
-// =====================================================
-// CONTINUOUS RECOGNITION
-// =====================================================
-
-async function loop() {
-
-    webcam.update();
-
-    await predict();
-
-    window.requestAnimationFrame(loop);
-
-}
-
-
-// =====================================================
-// AI PREDICTION
-// =====================================================
-
-async function predict() {
-
-    const prediction =
-        await model.predict(webcam.canvas);
-
-
-    let highestProbability = 0;
-
-    let highestClass = "";
-
-
-    // Find the class with the highest probability
-
-    for(let i = 0; i < maxPredictions; i++) {
-
-        if(
-            prediction[i].probability >
-            highestProbability
-        ) {
-
-            highestProbability =
-                prediction[i].probability;
-
-            highestClass =
-                prediction[i].className;
-
-        }
-
-    }
-
-
-    // If confidence is too low
-
-    if(
-        highestProbability <
-        CONFIDENCE_THRESHOLD
-    ) {
-
-        candidateWord = "";
-
-        stableFrames = 0;
-
-        return;
-
-    }
-
-
-    // Ignore the NOTHING class
-
-    if(
-        highestClass.toUpperCase() === "NOTHING"
-    ) {
-
-        candidateWord = "";
-
-        stableFrames = 0;
-
-        if(lastWord !== "") {
-
-            lastWord = "";
-
-            sendWordToApp("");
-
-        }
-
-        return;
-
-    }
-
-
-    // Check whether prediction stayed the same
-
-    if(
-        highestClass === candidateWord
-    ) {
-
-        stableFrames++;
-
-    }
-
-    else {
-
-        candidateWord = highestClass;
-
-        stableFrames = 1;
-
-    }
-
-
-    // Accept prediction after a few stable frames
-
-    if(
-        stableFrames >=
-        REQUIRED_STABLE_FRAMES
-    ) {
-
-        if(
-            highestClass !== lastWord
-        ) {
-
-            lastWord = highestClass;
-
-            document.getElementById("result").innerText =
-                highestClass;
-
-
-            sendWordToApp(
-                highestClass
+            model = await tmImage.load(
+                MODEL_URL + "model.json",
+                MODEL_URL + "metadata.json"
             );
 
+            document.getElementById("status").innerText =
+                "Starting camera...";
+
+            await startCamera();
+
+        } catch (error) {
+
+            console.error(error);
+
+            document.getElementById("result").innerText =
+                "Error";
+
+            document.getElementById("status").innerText =
+                "Could not load model.";
+        }
+    };
+
+
+
+    // =========================================================
+    // START CAMERA
+    // =========================================================
+
+    async function startCamera() {
+
+        try {
+
+            // Stop previous camera
+            if (stream) {
+
+                stream.getTracks().forEach(function(track) {
+                    track.stop();
+                });
+
+            }
+
+
+            // FRONT CAMERA
+            if (usingFrontCamera) {
+
+                stream = await navigator.mediaDevices.getUserMedia({
+
+                    video: {
+                        facingMode: "user",
+                        width: {
+                            ideal: 640
+                        },
+                        height: {
+                            ideal: 480
+                        }
+                    },
+
+                    audio: false
+                });
+
+            }
+
+            // BACK CAMERA
+            else {
+
+                stream = await navigator.mediaDevices.getUserMedia({
+
+                    video: {
+                        facingMode: {
+                            ideal: "environment"
+                        },
+                        width: {
+                            ideal: 640
+                        },
+                        height: {
+                            ideal: 480
+                        }
+                    },
+
+                    audio: false
+                });
+
+            }
+
+
+            video.srcObject = stream;
+
+            await video.play();
+
+
+            // Mirror front camera
+            if (usingFrontCamera) {
+
+                video.style.transform = "scaleX(-1)";
+
+            } else {
+
+                video.style.transform = "scaleX(1)";
+
+            }
+
+
+            document.getElementById("status").innerText =
+                usingFrontCamera
+                ? "Front camera"
+                : "Back camera";
+
+
+            // Start recognition
+            requestAnimationFrame(predictLoop);
+
         }
 
+        catch (error) {
+
+            console.error(error);
+
+            document.getElementById("result").innerText =
+                "Camera error";
+
+            document.getElementById("status").innerText =
+                "Could not start camera.";
+
+        }
     }
 
-}
 
 
-// =====================================================
-// SEND WORD TO MIT APP INVENTOR
-// =====================================================
+    // =========================================================
+    // SWITCH CAMERA
+    // =========================================================
 
-function sendWordToApp(word) {
+    async function switchCamera() {
 
-    if(
-        window.AppInventor &&
-        window.AppInventor.setWebViewString
-    ) {
+        usingFrontCamera = !usingFrontCamera;
 
-        window.AppInventor.setWebViewString(
-            word
-        );
+        document.getElementById("status").innerText =
+            "Switching camera...";
 
+        await startCamera();
     }
 
-}
+
+
+    // =========================================================
+    // RECOGNITION LOOP
+    // =========================================================
+
+    async function predictLoop() {
+
+        if (!model || !video) {
+
+            requestAnimationFrame(predictLoop);
+
+            return;
+        }
+
+
+        if (video.readyState >= 2) {
+
+            try {
+
+                const predictions =
+                    await model.predict(video);
+
+
+                let bestPrediction = null;
+
+
+                // Find highest probability
+                for (let i = 0; i < predictions.length; i++) {
+
+                    if (
+                        bestPrediction === null ||
+                        predictions[i].probability >
+                        bestPrediction.probability
+                    ) {
+
+                        bestPrediction = predictions[i];
+
+                    }
+                }
+
+
+                if (bestPrediction) {
+
+                    let word =
+                        bestPrediction.className;
+
+                    let probability =
+                        bestPrediction.probability;
+
+
+                    // Ignore weak predictions
+                    if (probability < CONFIDENCE_THRESHOLD) {
+
+                        word = "NOTHING";
+
+                    }
+
+
+                    // Ignore NOTHING
+                    if (word === "NOTHING") {
+
+                        stableWord = "";
+                        stableCount = 0;
+
+                    }
+
+                    else {
+
+                        // Check if same prediction continues
+                        if (word === stableWord) {
+
+                            stableCount++;
+
+                        }
+
+                        else {
+
+                            stableWord = word;
+                            stableCount = 1;
+
+                        }
+
+
+                        // Only accept stable prediction
+                        if (stableCount >= STABLE_FRAMES) {
+
+                            if (word !== lastWord) {
+
+                                lastWord = word;
+
+                                document.getElementById("result")
+                                    .innerText = word;
+
+
+                                // Send word to MIT App Inventor
+                                if (
+                                    window.AppInventor &&
+                                    window.AppInventor.setWebViewString
+                                ) {
+
+                                    window.AppInventor
+                                        .setWebViewString(word);
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+            catch (error) {
+
+                console.error(error);
+
+            }
+
+        }
+
+
+        requestAnimationFrame(predictLoop);
+
+    }
 
 </script>
 
