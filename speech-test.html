@@ -1,1 +1,47 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Speech Backend Test</title>
+</head>
+<body style="font-family: Arial, sans-serif; padding: 24px;">
+  <h2>Speech Backend Test</h2>
+  <p>This test does not use your microphone.</p>
+  <button id="testButton">Test backend</button>
+  <p id="status">Ready to test.</p>
+
+  <script>
+    const backendUrl =
+      "https://speech-token-backend.sweatiecupcakedum555.workers.dev/";
+
+    document.getElementById("testButton").onclick = async () => {
+      const status = document.getElementById("status");
+      status.textContent = "Testing…";
+
+      try {
+        const response = await fetch(backendUrl, {
+          method: "GET",
+          cache: "no-store"
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.token) {
+          status.textContent =
+            "SUCCESS: Temporary token received. Do not share it.";
+        } else {
+          status.textContent =
+            "FAILED (" + response.status + "): " +
+            (data.error || "No token returned.");
+        }
+      } catch (error) {
+        status.textContent =
+          "Request failed. Check the deployment and browser console.";
+      }
+    };
+  </script>
+</body>
+</html>
+
