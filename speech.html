@@ -1,0 +1,443 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Live Speech Transcriber</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #101010;
+      color: #f5f5f5;
+      font-family: Arial, sans-serif;
+    }
+
+    main {
+      max-width: 720px;
+      margin: auto;
+    }
+
+    h1 { font-size: 1.8rem; }
+
+    .note { color: #c5c5c5; line-height: 1.5; }
+
+    button {
+      padding: 12px 20px;
+      margin: 6px 8px 6px 0;
+      border: 0;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    #startButton { background: #b9f6ca; color: #102418; }
+    #stopButton { background: #ffcccc; color: #3a1010; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    #status {
+      padding: 12px;
+      background: #242424;
+      border-radius: 8px;
+      line-height: 1.5;
+    }
+
+    #transcript {
+      margin-top: 18px;
+      padding: 16px;
+      min-height: 200px;
+      background: #1b1b1b;
+      border: 1px solid #444;
+      border-radius: 10px;
+      overflow-wrap: anywhere;
+    }
+
+    .turn {
+      padding: 12px 0;
+      border-bottom: 1px solid #383838;
+      line-height: 1.6;
+    }
+
+    .speaker {
+      display: block;
+      color: #a5d6ff;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .partial { color: #bdbdbd; }
+
+    .privacy {
+      margin-top: 20px;
+      color: #c5c5c5;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+<main>
+  <h1>Live Speech Transcriber</h1>
+
+  <p class="note">
+    Transcribe spoken English and label different speakers in real time.
+    Speaker labels are estimates and may occasionally be incorrect.
+  </p>
+
+  <button id="startButton">Start</button>
+  <button id="stopButton" disabled>Stop</button>
+
+  <p id="status" role="status" aria-live="polite">
+    Ready. Press Start when you are ready.
+  </p>
+
+  <section id="transcript" aria-live="polite">
+    Your transcript will appear here.
+  </section>
+
+  <p class="privacy">
+    Privacy: This page does not intentionally save audio or transcripts
+    to files, databases, or browser storage. Audio is streamed to
+    AssemblyAI for processing. Stop the session when finished.
+    Obtain permission from everyone before transcribing a conversation.
+  </p>
+</main>
+
+<script>
+(() => {
+  "use strict";
+
+  const TOKEN_URL =
+    "https://speech-token-backend.sweatiecupcakedum555.workers.dev/";
+
+  const startButton = document.getElementById("startButton");
+  const stopButton = document.getElementById("stopButton");
+  const statusBox = document.getElementById("status");
+  const transcriptBox = document.getElementById("transcript");
+
+  let micStream = null;
+  let audioContext = null;
+  let sourceNode = null;
+  let processorNode = null;
+  let socket = null;
+  let running = false;
+  let sessionNumber = 0;
+  let partialElement = null;
+  let finalTurns = 0;
+
+  function setStatus(message) {
+    statusBox.textContent = message;
+  }
+
+  function addTurn(speaker, text, isPartial) {
+    if (!text) return;
+
+    if (isPartial) {
+      if (!partialElement) {
+        if (finalTurns === 0 &&
+            transcriptBox.textContent === "Your transcript will appear here.") {
+          transcriptBox.textContent = "";
+        }
+
+        partialElement = document.createElement("div");
+        partialElement.className = "turn partial";
+
+        const speakerElement = document.createElement("span");
+        speakerElement.className = "speaker";
+        partialElement.appendChild(speakerElement);
+
+        const textElement = document.createElement("span");
+        partialElement.appendChild(textElement);
+
+        transcriptBox.appendChild(partialElement);
+      }
+
+      partialElement.querySelector(".speaker").textContent =
+        "Speaker " + (speaker || "Unknown");
+      partialElement.lastElementChild.textContent = text;
+      return;
+    }
+
+    if (partialElement) {
+      partialElement.remove();
+      partialElement = null;
+    }
+
+    if (finalTurns === 0 &&
+        transcriptBox.textContent === "Your transcript will appear here.") {
+      transcriptBox.textContent = "";
+    }
+
+    const turnElement = document.createElement("div");
+    turnElement.className = "turn";
+
+    const speakerElement = document.createElement("span");
+    speakerElement.className = "speaker";
+    speakerElement.textContent = "Speaker " + (speaker || "Unknown");
+
+    const textElement = document.createElement("span");
+    textElement.textContent = text;
+
+    turnElement.appendChild(speakerElement);
+    turnElement.appendChild(textElement);
+    transcriptBox.appendChild(turnElement);
+
+    finalTurns++;
+    transcriptBox.scrollTop = transcriptBox.scrollHeight;
+  }
+
+  // Convert microphone Float32 audio to signed PCM16 mono at 16 kHz.
+  function toPcm16(input, inputRate, outputRate) {
+    const ratio = inputRate / outputRate;
+    const outputLength = Math.floor(input.length / ratio);
+
+    if (outputLength < 1) return new ArrayBuffer(0);
+
+    const buffer = new ArrayBuffer(outputLength * 2);
+    const view = new DataView(buffer);
+
+    for (let i = 0; i < outputLength; i++) {
+      const position = i * ratio;
+      const left = Math.floor(position);
+      const fraction = position - left;
+      const right = Math.min(left + 1, input.length - 1);
+
+      const sample =
+        input[left] * (1 - fraction) + input[right] * fraction;
+
+      const clipped = Math.max(-1, Math.min(1, sample));
+      const pcm = clipped < 0
+        ? clipped * 32768
+        : clipped * 32767;
+
+      view.setInt16(i * 2, pcm, true);
+    }
+
+    return buffer;
+  }
+
+  async function cleanup(sendTerminate = true) {
+    running = false;
+    startButton.disabled = false;
+    stopButton.disabled = true;
+
+    if (processorNode) {
+      processorNode.onaudioprocess = null;
+      try { processorNode.disconnect(); } catch (_) {}
+      processorNode = null;
+    }
+
+    if (sourceNode) {
+      try { sourceNode.disconnect(); } catch (_) {}
+      sourceNode = null;
+    }
+
+    if (micStream) {
+      micStream.getTracks().forEach(track => track.stop());
+      micStream = null;
+    }
+
+    const oldSocket = socket;
+    socket = null;
+
+    if (oldSocket) {
+      try {
+        if (oldSocket.readyState === WebSocket.OPEN && sendTerminate) {
+          oldSocket.send(JSON.stringify({ type: "Terminate" }));
+        }
+      } catch (_) {}
+
+      try {
+        if (oldSocket.readyState !== WebSocket.CLOSED) {
+          oldSocket.close();
+        }
+      } catch (_) {}
+    }
+
+    if (audioContext) {
+      const oldContext = audioContext;
+      audioContext = null;
+      try { await oldContext.close(); } catch (_) {}
+    }
+
+    partialElement = null;
+  }
+
+  async function start() {
+    if (running) return;
+
+    running = true;
+    const thisSession = ++sessionNumber;
+    startButton.disabled = true;
+    stopButton.disabled = false;
+    finalTurns = 0;
+    partialElement = null;
+    transcriptBox.textContent = "";
+    setStatus("Requesting a temporary connection token…");
+
+    try {
+      const tokenResponse = await fetch(TOKEN_URL, {
+        method: "GET",
+        cache: "no-store"
+      });
+
+      const tokenData = await tokenResponse.json();
+
+      if (!tokenResponse.ok || !tokenData.token) {
+        throw new Error(
+          tokenData.error || "Could not obtain a temporary token."
+        );
+      }
+
+      if (!running || thisSession !== sessionNumber) return;
+
+      setStatus("Requesting microphone permission…");
+
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+
+      if (!running || thisSession !== sessionNumber) {
+        micStream.getTracks().forEach(track => track.stop());
+        micStream = null;
+        return;
+      }
+
+      audioContext = new AudioContext();
+      await audioContext.resume();
+
+      sourceNode = audioContext.createMediaStreamSource(micStream);
+      processorNode = audioContext.createScriptProcessor(4096, 1, 1);
+
+      const wsUrl = new URL("wss://streaming.assemblyai.com/v3/ws");
+      wsUrl.searchParams.set("sample_rate", "16000");
+      wsUrl.searchParams.set("speech_model", "u3-rt-pro");
+      wsUrl.searchParams.set("speaker_labels", "true");
+      wsUrl.searchParams.set("max_speakers", "4");
+      wsUrl.searchParams.set("token", tokenData.token);
+
+      setStatus("Connecting to live transcription…");
+      socket = new WebSocket(wsUrl.toString());
+
+      socket.onopen = () => {
+        if (!running || thisSession !== sessionNumber) {
+          try { socket.close(); } catch (_) {}
+          return;
+        }
+
+        setStatus("Listening. Speak clearly, one person at a time if possible.");
+
+        processorNode.onaudioprocess = event => {
+          if (!running || !socket ||
+              socket.readyState !== WebSocket.OPEN) return;
+
+          const input = event.inputBuffer.getChannelData(0);
+          const pcm = toPcm16(
+            input,
+            audioContext.sampleRate,
+            16000
+          );
+
+          if (pcm.byteLength > 0) {
+            socket.send(pcm);
+          }
+        };
+
+        sourceNode.connect(processorNode);
+
+        // A destination connection keeps the processor running.
+        // The output is silent so the microphone isn't played through speakers.
+        const silentGain = audioContext.createGain();
+        silentGain.gain.value = 0;
+        processorNode.connect(silentGain);
+        silentGain.connect(audioContext.destination);
+      };
+
+      socket.onmessage = event => {
+        if (!running || thisSession !== sessionNumber) return;
+
+        let message;
+        try {
+          message = JSON.parse(event.data);
+        } catch (_) {
+          return;
+        }
+
+        if (message.type === "Begin") {
+          setStatus("Connected. Listening for speech…");
+        }
+
+        if (message.type === "Turn") {
+          const text = message.transcript || "";
+          const speaker = message.speaker_label || "Unknown";
+
+          if (text.trim()) {
+            addTurn(speaker, text, !message.end_of_turn);
+          }
+        }
+
+        if (message.type === "Termination") {
+          setStatus("Transcription session ended.");
+        }
+
+        if (message.error) {
+          setStatus("Transcription error: " + message.error);
+        }
+      };
+
+      socket.onerror = () => {
+        if (running && thisSession === sessionNumber) {
+          setStatus("Connection error. Check your internet and try again.");
+        }
+      };
+
+      socket.onclose = () => {
+        if (running && thisSession === sessionNumber) {
+          cleanup(false).then(() => {
+            setStatus("Connection closed. Press Start to try again.");
+          });
+        }
+      };
+
+    } catch (error) {
+      if (thisSession === sessionNumber) {
+        await cleanup();
+        setStatus("Could not start: " + (error.message || "Unknown error"));
+      }
+    }
+  }
+
+  async function stop() {
+    if (!running) return;
+
+    setStatus("Stopping and releasing the microphone…");
+    await cleanup(true);
+    setStatus("Stopped. Audio capture has ended.");
+  }
+
+  startButton.addEventListener("click", start);
+  stopButton.addEventListener("click", stop);
+
+  window.addEventListener("pagehide", () => {
+    // Best-effort cleanup when leaving the page.
+    if (micStream) micStream.getTracks().forEach(track => track.stop());
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      try { socket.send(JSON.stringify({ type: "Terminate" })); } catch (_) {}
+      socket.close();
+    }
+    if (audioContext) audioContext.close();
+  });
+})();
+</script>
+</body>
+</html>
