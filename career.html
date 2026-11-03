@@ -29,103 +29,64 @@ html, body {
 }
 
 body {
-  background: linear-gradient(145deg, #05070c, #0b0f18);
+  background: #07090f;
   color: var(--text);
-  font: 15px/1.5 Arial, sans-serif;
+  font-family: Arial, sans-serif;
 }
 
+/* Main layout */
 main {
   width: 100%;
   height: 100%;
   max-width: 850px;
   margin: auto;
-  padding: 8px 12px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
+/* Title */
 header {
   text-align: center;
-  padding: 8px 4px 12px;
+  padding: 10px 5px;
   flex-shrink: 0;
 }
 
 h1 {
-  font-size: clamp(24px, 5vw, 34px);
-  margin: 0 0 4px;
-}
-
-header p {
+  font-size: 27px;
   margin: 0;
-  font-size: 13px;
+  color: var(--text);
 }
 
-h2 {
-  font-size: 18px;
-  margin: 0 0 5px;
-}
-
-.muted, header p, footer {
-  color: var(--muted);
-}
-
-.card {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 15px;
-  padding: 12px;
-  margin: 0;
-  flex: 1 1 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.description {
-  font-size: 13px;
-  margin: 0 0 8px;
-  flex-shrink: 0;
-}
-
-.notice {
-  background: #141b29;
-  border-left: 4px solid var(--accent);
-  padding: 8px 10px;
-  border-radius: 7px;
-  color: var(--muted);
-  font-size: 12px;
-  margin-bottom: 8px;
-  flex-shrink: 0;
-}
-
-/* Scrollable conversation */
+/* Chat area */
 #chatLog {
-  display: block;
-  flex: 1 1 0;
-  height: 0;
+  flex: 1;
   min-height: 0;
   width: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
-  overscroll-behavior-y: contain;
   background: #111725;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 12px;
-  margin: 0 0 10px;
+  margin-bottom: 10px;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
 }
 
+/* Messages */
 .bubble {
-  padding: 10px 13px;
+  padding: 11px 14px;
   border-radius: 12px;
-  margin: 8px 0;
+  margin: 9px 0;
   max-width: 96%;
   overflow-wrap: anywhere;
   font-size: 14px;
+  line-height: 1.5;
 }
 
 .assistant {
@@ -142,50 +103,49 @@ h2 {
   margin: 5px 0;
 }
 
-label {
-  display: block;
-  font-weight: 600;
-  font-size: 13px;
-  margin-bottom: 5px;
+/* Input */
+.input-area {
   flex-shrink: 0;
+  background: #10131b;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
 }
 
 textarea {
   display: block;
   width: 100%;
   height: 65px;
-  min-height: 55px;
-  max-height: 100px;
-  padding: 10px;
+  padding: 11px;
   border-radius: 9px;
   border: 1px solid var(--line);
   background: #080b12;
   color: var(--text);
-  font: inherit;
+  font-family: Arial, sans-serif;
   font-size: 14px;
   resize: none;
-  flex-shrink: 0;
+  outline: none;
 }
 
 textarea::placeholder {
-  color: #747e91;
+  color: var(--muted);
 }
 
-.actions {
-  display: flex;
-  margin-top: 8px;
-  flex-shrink: 0;
+textarea:focus {
+  border-color: var(--accent);
 }
 
+/* Send button */
 button {
   width: 100%;
-  border: 0;
+  margin-top: 9px;
+  border: none;
   border-radius: 9px;
   padding: 12px;
   background: var(--accent);
   color: #101426;
-  font-weight: 700;
-  font-size: 14px;
+  font-weight: bold;
+  font-size: 15px;
   cursor: pointer;
 }
 
@@ -194,37 +154,18 @@ button:disabled {
   cursor: not-allowed;
 }
 
-footer {
-  text-align: center;
-  font-size: 10px;
-  padding: 7px 4px 2px;
-  flex-shrink: 0;
-}
-
-@media (max-height: 550px) {
+/* Short screens */
+@media (max-height: 500px) {
   header {
-    padding: 3px;
+    padding: 4px;
   }
 
   h1 {
     font-size: 22px;
   }
 
-  .card {
-    padding: 8px;
-  }
-
-  .notice {
-    padding: 5px 8px;
-  }
-
   textarea {
     height: 48px;
-    min-height: 45px;
-  }
-
-  footer {
-    display: none;
   }
 }
 </style>
@@ -236,21 +177,7 @@ footer {
 
 <header>
   <h1>AI Career Advisor</h1>
-  <p>Explore career ideas that may fit your interests, strengths and support needs.</p>
 </header>
-
-<section class="card">
-
-<h2>Chat with the Career Advisor</h2>
-
-<p class="muted description">
-Ask questions, explore different careers, or tell the AI about your interests and strengths.
-</p>
-
-<div class="notice">
-Your messages are sent to the AI service to generate career suggestions.
-Do not include your name, contact details or private medical information.
-</div>
 
 <div id="chatLog" aria-live="polite">
   <div class="bubble assistant">
@@ -258,23 +185,16 @@ Do not include your name, contact details or private medical information.
   </div>
 </div>
 
-<label for="chatInput">Your message</label>
+<div class="input-area">
 
 <textarea
   id="chatInput"
-  placeholder="For example: I enjoy science and technology. What careers could I explore?"
+  placeholder="Type your message here..."
 ></textarea>
 
-<div class="actions">
-  <button id="sendBtn" type="button">Send</button>
+<button id="sendBtn" type="button">Send</button>
+
 </div>
-
-</section>
-
-<footer>
-Career suggestions should help you explore possibilities, not limit them.
-A disability or support need does not automatically rule out a career.
-</footer>
 
 </main>
 
@@ -313,7 +233,6 @@ function addMessage(message, className) {
     bubble.textContent = message;
   }
 
-  // Add the message without forcing the conversation to the bottom.
   chatLog.appendChild(bubble);
 }
 
