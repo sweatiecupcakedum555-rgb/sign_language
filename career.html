@@ -143,11 +143,12 @@ const answer = typeof rawAnswer === 'string'
     addMessage(answer, 'assistant');
 
   } catch (error) {
-    addMessage(
-      'Sorry, something went wrong. Please try again.',
-      'assistant'
-    );
-    console.error(error);
+  console.error("Career Advisor error:", error);
+
+  addMessage(
+    "Error: " + error.message,
+    "assistant"
+  );
 
   } finally {
     sendBtn.disabled = false;
