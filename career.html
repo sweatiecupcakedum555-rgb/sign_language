@@ -24,6 +24,7 @@ html, body {
   width: 100%;
   height: 100%;
   margin: 0;
+  padding: 0;
   overflow: hidden;
 }
 
@@ -75,7 +76,7 @@ h2 {
   border-radius: 15px;
   padding: 12px;
   margin: 0;
-  flex: 1;
+  flex: 1 1 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -99,22 +100,23 @@ h2 {
   flex-shrink: 0;
 }
 
-/* Main scrollable conversation area */
+/* Scrollable conversation */
 #chatLog {
-  flex: 1;
+  display: block;
+  flex: 1 1 0;
+  height: 0;
   min-height: 0;
   width: 100%;
-  overflow-y: scroll;
+  overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
   touch-action: pan-y;
+  overscroll-behavior-y: contain;
   background: #111725;
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 12px;
   margin: 0 0 10px;
-  scroll-behavior: smooth;
 }
 
 .bubble {
@@ -149,6 +151,7 @@ label {
 }
 
 textarea {
+  display: block;
   width: 100%;
   height: 65px;
   min-height: 55px;
@@ -162,6 +165,10 @@ textarea {
   font-size: 14px;
   resize: none;
   flex-shrink: 0;
+}
+
+textarea::placeholder {
+  color: #747e91;
 }
 
 .actions {
@@ -194,7 +201,6 @@ footer {
   flex-shrink: 0;
 }
 
-/* Short screen adjustments */
 @media (max-height: 550px) {
   header {
     padding: 3px;
@@ -280,10 +286,6 @@ const chatLog = document.getElementById('chatLog');
 const WORKER_URL =
   'https://career-advisor-api.sweatiecupcakedum555.workers.dev/';
 
-function scrollToLatest() {
-  chatLog.scrollTop = chatLog.scrollHeight;
-}
-
 function addMessage(message, className) {
   const bubble = document.createElement('div');
   bubble.className = 'bubble ' + className;
@@ -311,9 +313,8 @@ function addMessage(message, className) {
     bubble.textContent = message;
   }
 
+  // Add the message without forcing the conversation to the bottom.
   chatLog.appendChild(bubble);
-
-  requestAnimationFrame(scrollToLatest);
 }
 
 async function sendMessage() {
@@ -359,7 +360,10 @@ async function sendMessage() {
   } catch (error) {
     console.error('Career Advisor error:', error);
 
-    addMessage('Error: ' + error.message, 'assistant');
+    addMessage(
+      'Error: ' + error.message,
+      'assistant'
+    );
 
   } finally {
     sendBtn.disabled = false;
