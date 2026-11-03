@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>AI Career Advisor</title>
 
 <style>
@@ -23,22 +23,25 @@
 html, body {
   width: 100%;
   height: 100%;
+  min-height: 0;
   margin: 0;
+  padding: 0;
   overflow: hidden;
 }
 
 body {
-  background: linear-gradient(145deg, #05070c, #0b0f18);
+  background: #07090f;
   color: var(--text);
-  font: 16px/1.5 Arial, sans-serif;
+  font: 15px/1.4 Arial, sans-serif;
 }
 
 main {
   width: 100%;
-  max-width: 850px;
   height: 100%;
-  margin: auto;
-  padding: 12px 16px;
+  height: 100dvh;
+  max-width: 850px;
+  margin: 0 auto;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -46,22 +49,23 @@ main {
 
 header {
   text-align: center;
-  padding: 12px 8px;
-  flex-shrink: 0;
+  padding: 5px 4px 10px;
+  flex: 0 0 auto;
 }
 
 h1 {
-  font-size: clamp(25px, 6vw, 36px);
-  margin: 0 0 6px;
+  font-size: clamp(23px, 5vw, 32px);
+  margin: 0 0 4px;
 }
 
 header p {
+  font-size: 13px;
   margin: 0;
 }
 
 h2 {
-  font-size: 20px;
-  margin: 0 0 6px;
+  font-size: 18px;
+  margin: 0;
 }
 
 .muted, header p, footer {
@@ -71,60 +75,59 @@ h2 {
 .card {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 16px;
-  margin: 8px 0;
-  flex: 1;
+  border-radius: 15px;
+  padding: 12px;
+  margin: 0;
+  flex: 1 1 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-.card > h2,
-.card > .muted,
-.card > .notice,
-.card > label,
-.card > textarea,
-.card > .actions {
-  flex-shrink: 0;
+.card > h2 {
+  flex: 0 0 auto;
 }
 
-.card > .muted {
-  margin: 4px 0 10px;
+.card > .description {
+  font-size: 13px;
+  margin: 4px 0 8px;
+  flex: 0 0 auto;
 }
 
 .notice {
   background: #141b29;
   border-left: 4px solid var(--accent);
-  padding: 10px 12px;
-  border-radius: 8px;
+  padding: 8px 10px;
+  border-radius: 7px;
   color: var(--muted);
-  font-size: 13px;
-  margin-bottom: 10px;
+  font-size: 12px;
+  margin-bottom: 8px;
+  flex: 0 0 auto;
 }
 
 #chatLog {
-  flex: 1;
-  min-height: 80px;
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   background: #111725;
   border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 12px;
-  margin: 4px 0 10px;
-  scroll-behavior: smooth;
+  border-radius: 10px;
+  padding: 10px;
+  margin: 0 0 8px;
 }
 
 .bubble {
-  padding: 10px 14px;
-  border-radius: 12px;
-  margin: 8px 0;
-  max-width: 95%;
+  padding: 9px 12px;
+  border-radius: 11px;
+  margin: 7px 0;
+  max-width: 96%;
   overflow-wrap: anywhere;
+  font-size: 14px;
 }
 
 .assistant {
@@ -138,41 +141,53 @@ h2 {
 }
 
 .bubble p {
-  margin: 5px 0;
-}
-
-.bubble strong {
-  color: #ffffff;
+  margin: 4px 0;
 }
 
 label {
   display: block;
   font-weight: 600;
-  margin: 4px 0 6px;
+  font-size: 13px;
+  margin-bottom: 5px;
+  flex: 0 0 auto;
 }
 
 textarea {
   width: 100%;
-  min-height: 65px;
-  max-height: 110px;
-  padding: 12px;
-  border-radius: 10px;
+  height: 62px;
+  min-height: 48px;
+  max-height: 90px;
+  padding: 10px;
+  border-radius: 9px;
   border: 1px solid var(--line);
   background: #080b12;
   color: var(--text);
   font: inherit;
+  font-size: 14px;
   resize: none;
-  overflow-y: auto;
+  flex: 0 0 auto;
+}
+
+textarea::placeholder {
+  color: #747e91;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  flex: 0 0 auto;
 }
 
 button {
+  width: 100%;
   border: 0;
-  border-radius: 11px;
-  padding: 12px 18px;
+  border-radius: 9px;
+  padding: 11px;
   background: var(--accent);
   color: #101426;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 14px;
   cursor: pointer;
 }
 
@@ -181,50 +196,54 @@ button:disabled {
   cursor: not-allowed;
 }
 
-.actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-
 footer {
   text-align: center;
-  font-size: 12px;
-  padding: 8px 4px;
-  flex-shrink: 0;
+  font-size: 10px;
+  padding: 7px 4px 2px;
+  flex: 0 0 auto;
 }
 
-/* Smaller screens */
-@media (max-height: 600px) {
+/* Short screens */
+@media (max-height: 550px) {
+  main {
+    padding: 4px 8px;
+  }
+
   header {
-    padding: 5px;
+    padding: 2px 4px 5px;
   }
 
   h1 {
-    font-size: 24px;
+    font-size: 21px;
+  }
+
+  header p {
+    font-size: 11px;
   }
 
   .card {
-    padding: 10px;
+    padding: 8px;
   }
 
   .notice {
-    padding: 6px 10px;
+    padding: 5px 8px;
+    margin-bottom: 5px;
   }
 
   textarea {
-    min-height: 48px;
+    height: 48px;
   }
 
   footer {
-    font-size: 10px;
-    padding: 4px;
+    font-size: 9px;
+    padding: 3px;
   }
 }
 </style>
 </head>
 
 <body>
+
 <main>
 
 <header>
@@ -236,7 +255,7 @@ footer {
 
 <h2>Chat with the Career Advisor</h2>
 
-<p class="muted">
+<p class="muted description">
 Ask questions, explore different careers, or tell the AI about your interests and strengths.
 </p>
 
@@ -255,7 +274,7 @@ Do not include your name, contact details or private medical information.
 
 <textarea
   id="chatInput"
-  placeholder="For example: I enjoy science and technology. What careers could I explore?"
+  placeholder="For example: I enjoy science and technology. What careers could I explore."
 ></textarea>
 
 <div class="actions">
@@ -267,7 +286,6 @@ Do not include your name, contact details or private medical information.
 <footer>
 Career suggestions should help you explore possibilities, not limit them.
 A disability or support need does not automatically rule out a career.
-Consider discussing important decisions with a trusted adult or qualified career adviser.
 </footer>
 
 </main>
@@ -279,6 +297,10 @@ const chatLog = document.getElementById('chatLog');
 
 const WORKER_URL =
   'https://career-advisor-api.sweatiecupcakedum555.workers.dev/';
+
+function scrollToLatest() {
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
 
 function addMessage(message, className) {
   const bubble = document.createElement('div');
@@ -309,10 +331,7 @@ function addMessage(message, className) {
 
   chatLog.appendChild(bubble);
 
-  // Automatically show the newest message
-  requestAnimationFrame(() => {
-    chatLog.scrollTop = chatLog.scrollHeight;
-  });
+  requestAnimationFrame(scrollToLatest);
 }
 
 async function sendMessage() {
