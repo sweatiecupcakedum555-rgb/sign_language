@@ -1,44 +1,175 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Career Advisor</title>
+
 <style>
-:root{--bg:#07090f;--panel:#10131b;--text:#eef0f7;--muted:#929bad;--accent:#7183e6;--line:#252c3b}
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#05070c,#0b0f18);color:var(--text);font:16px/1.5 Arial,sans-serif}
-main{max-width:850px;margin:auto;padding:22px 16px 48px}header{text-align:center;padding:18px 8px 22px}
-h1{font-size:clamp(28px,6vw,40px);margin:0 0 8px}.muted,header p,small,footer{color:var(--muted)}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px;margin:16px 0}
-h2{font-size:21px;margin:0 0 6px}label{display:block;font-weight:600;margin:14px 0 6px}
-input,textarea,select{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#080b12;color:var(--text);font:inherit}
-textarea{min-height:88px;resize:vertical}button{border:0;border-radius:11px;padding:12px 18px;background:var(--accent);color:#101426;font-weight:700;font-size:15px;cursor:pointer}
-button:disabled{opacity:.55;cursor:not-allowed}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
-.secondary{background:#171e2c;color:var(--text);border:1px solid var(--line)}
-.notice{background:#141b29;border-left:4px solid var(--accent);padding:12px 14px;border-radius:8px;color:var(--muted);font-size:14px}
-#result{display:none;white-space:pre-wrap}#chatLog{min-height:100px;max-height:300px;overflow:auto;background:#111725;border:1px solid var(--line);border-radius:12px;padding:12px;margin:12px 0}
-.bubble{padding:10px 12px;border-radius:12px;margin:8px 0;max-width:90%;white-space:pre-wrap}.assistant{background:#171e2c}
-footer{text-align:center;font-size:13px;padding:16px}
-</style></head>
-<body><main>
-<header><h1>AI Career Advisor</h1><p>Explore career ideas that may fit your interests, strengths and support needs.</p></header>
+:root {
+  --bg: #07090f;
+  --panel: #10131b;
+  --text: #eef0f7;
+  --muted: #929bad;
+  --accent: #7183e6;
+  --line: #252c3b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: linear-gradient(145deg, #05070c, #0b0f18);
+  color: var(--text);
+  font: 16px/1.5 Arial, sans-serif;
+}
+
+main {
+  max-width: 850px;
+  margin: auto;
+  padding: 22px 16px 48px;
+}
+
+header {
+  text-align: center;
+  padding: 18px 8px 22px;
+}
+
+h1 {
+  font-size: clamp(28px, 6vw, 40px);
+  margin: 0 0 8px;
+}
+
+h2 {
+  font-size: 21px;
+  margin: 0 0 6px;
+}
+
+.muted, header p, footer {
+  color: var(--muted);
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 20px;
+  margin: 16px 0;
+}
+
+textarea {
+  width: 100%;
+  min-height: 88px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #080b12;
+  color: var(--text);
+  font: inherit;
+  resize: vertical;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin: 14px 0 6px;
+}
+
+button {
+  border: 0;
+  border-radius: 11px;
+  padding: 12px 18px;
+  background: var(--accent);
+  color: #101426;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.notice {
+  background: #141b29;
+  border-left: 4px solid var(--accent);
+  padding: 12px 14px;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+#chatLog {
+  min-height: 100px;
+  max-height: 420px;
+  overflow-y: auto;
+  background: #111725;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 12px 0;
+}
+
+.bubble {
+  padding: 10px 14px;
+  border-radius: 12px;
+  margin: 8px 0;
+  max-width: 95%;
+  overflow-wrap: anywhere;
+}
+
+.assistant {
+  background: #171e2c;
+  margin-right: auto;
+}
+
+.user {
+  background: #29345a;
+  margin-left: auto;
+}
+
+.bubble p {
+  margin: 5px 0;
+}
+
+.bubble strong {
+  color: #ffffff;
+}
+
+footer {
+  text-align: center;
+  font-size: 13px;
+  padding: 16px;
+}
+</style>
+</head>
+
+<body>
+<main>
+
+<header>
+  <h1>AI Career Advisor</h1>
+  <p>Explore career ideas that may fit your interests, strengths and support needs.</p>
+</header>
+
 <section class="card">
-<h2>Part 1 — Your career profile</h2><p class="muted">Answer what you feel comfortable sharing. You can skip any question.</p>
-<div class="notice">This first version does not send your answers to an AI or save them. We'll connect the AI securely in a later step.</div>
-<form id="profileForm">
-<label for="interests">1. What subjects, activities or topics do you enjoy?</label><textarea id="interests" placeholder="For example: drawing, science, helping people, computers..."></textarea>
-<label for="strengths">2. What are some things you're good at?</label><textarea id="strengths" placeholder="For example: creative thinking, explaining ideas, noticing details..."></textarea>
-<label for="challenges">3. What tasks or situations do you find challenging?</label><textarea id="challenges" placeholder="Share only what you are comfortable sharing."></textarea>
-<label for="environment">4. What kind of work environment might suit you?</label>
-<select id="environment"><option value="">Choose an option (optional)</option><option>Quiet and calm</option><option>Active and hands-on</option><option>Working with people</option><option>Mostly independent</option><option>A mix of different activities</option><option>Not sure yet</option></select>
-<label for="support">5. Would any tools, adjustments or support help you at work?</label><textarea id="support" placeholder="Optional. For example: written instructions, accessible software, flexible breaks, step-free access, captions..."></textarea>
-<small>You do not need to name a diagnosis or share private medical details. A description of the support that helps you is enough.</small>
-<label for="goals">6. Is there a career or type of work you're curious about?</label><textarea id="goals" placeholder="Optional. It's okay if you don't know yet."></textarea>
-<div class="actions"><button type="submit">Review my profile</button><button type="reset" class="secondary">Clear answers</button></div>
-</form><div id="result" class="notice" aria-live="polite"></div>
-</section>
-<section class="card">
-<h2>Chat with the career advisor</h2>
-<p class="muted">Ask questions or add details that the questionnaire did not cover.</p>
+
+<h2>Chat with the Career Advisor</h2>
+
+<p class="muted">
+Ask questions, explore different careers, or tell the AI about your interests and strengths.
+</p>
 
 <div class="notice">
 Your messages are sent to the AI service to generate career suggestions.
@@ -46,24 +177,33 @@ Do not include your name, contact details or private medical information.
 </div>
 
 <div id="chatLog" aria-live="polite">
-<div class="bubble assistant">
-Hello! I'm your Career Advisor. What would you like to explore about work and careers?
-</div>
+  <div class="bubble assistant">
+    Hello! I'm your Career Advisor. What would you like to explore about work and careers?
+  </div>
 </div>
 
 <label for="chatInput">Your message</label>
-<textarea id="chatInput" placeholder="For example: I enjoy art but prefer working quietly..."></textarea>
+
+<textarea
+  id="chatInput"
+  placeholder="For example: I enjoy science and technology. What careers could I explore?"
+></textarea>
 
 <div class="actions">
-<button id="sendBtn" type="button">Send</button>
+  <button id="sendBtn" type="button">Send</button>
 </div>
-</section>
-<footer>Career suggestions should help you explore possibilities, not limit them. A disability or support need does not automatically rule out a career. Consider discussing important decisions with a trusted adult or qualified career adviser.</footer>
-</main>
-<script>
 
-const form = document.getElementById('profileForm');
-const result = document.getElementById('result');
+</section>
+
+<footer>
+Career suggestions should help you explore possibilities, not limit them.
+A disability or support need does not automatically rule out a career.
+Consider discussing important decisions with a trusted adult or qualified career adviser.
+</footer>
+
+</main>
+
+<script>
 const chatInput = document.getElementById('chatInput');
 const sendBtn = document.getElementById('sendBtn');
 const chatLog = document.getElementById('chatLog');
@@ -71,52 +211,29 @@ const chatLog = document.getElementById('chatLog');
 const WORKER_URL =
   'https://career-advisor-api.sweatiecupcakedum555.workers.dev/';
 
-form.addEventListener('submit', e => {
-  e.preventDefault();
-
-  const fields = [
-    ['Interests', 'interests'],
-    ['Strengths', 'strengths'],
-    ['Challenges', 'challenges'],
-    ['Preferred environment', 'environment'],
-    ['Helpful tools or support', 'support'],
-    ['Career interests', 'goals']
-  ];
-
-  result.textContent =
-    'Your profile is ready to review:\n\n' +
-    fields.map(([label, id]) =>
-      label + ': ' +
-      (document.getElementById(id).value.trim() || 'Not provided')
-    ).join('\n\n') +
-    '\n\nThis is a local preview.';
-
-  result.style.display = 'block';
-  result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-});
-
-
 function addMessage(message, className) {
   const bubble = document.createElement('div');
   bubble.className = 'bubble ' + className;
 
   if (className === 'assistant') {
     const lines = message.split('\n');
-    const formatted = document.createElement('div');
 
     lines.forEach(line => {
+      const trimmed = line.trim();
+
+      if (!trimmed) return;
+
       const p = document.createElement('p');
-      p.textContent = line
+
+      const cleanLine = trimmed
         .replace(/^#{1,6}\s*/, '')
         .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/\*(.*?)\*/g, '$1')
         .replace(/^\s*[-*]\s+/, '• ');
 
-      if (line.trim()) {
-        formatted.appendChild(p);
-      }
+      p.textContent = cleanLine;
+      bubble.appendChild(p);
     });
-
-    bubble.appendChild(formatted);
   } else {
     bubble.textContent = message;
   }
@@ -125,13 +242,13 @@ function addMessage(message, className) {
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
-
 async function sendMessage() {
   const message = chatInput.value.trim();
 
   if (!message || sendBtn.disabled) return;
 
-  addMessage(message, 'assistant');
+  addMessage(message, 'user');
+
   chatInput.value = '';
   sendBtn.disabled = true;
   sendBtn.textContent = 'Thinking...';
@@ -153,25 +270,25 @@ async function sendMessage() {
 
     const rawAnswer = data.answer;
 
-const answer = typeof rawAnswer === 'string'
-  ? rawAnswer
-  : Array.isArray(rawAnswer)
-    ? rawAnswer.map(part => part.text || '').join('')
-    : '';
+    const answer = typeof rawAnswer === 'string'
+      ? rawAnswer
+      : Array.isArray(rawAnswer)
+        ? rawAnswer.map(part => part.text || '').join('')
+        : '';
 
-    if (!answer) {
+    if (!answer.trim()) {
       throw new Error('The AI returned an empty response.');
     }
 
     addMessage(answer, 'assistant');
 
   } catch (error) {
-  console.error("Career Advisor error:", error);
+    console.error('Career Advisor error:', error);
 
-  addMessage(
-    "Error: " + error.message,
-    "assistant"
-  );
+    addMessage(
+      'Error: ' + error.message,
+      'assistant'
+    );
 
   } finally {
     sendBtn.disabled = false;
@@ -187,5 +304,7 @@ chatInput.addEventListener('keydown', event => {
     sendMessage();
   }
 });
+</script>
 
-</script></body></html>
+</body>
+</html>
