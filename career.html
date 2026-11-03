@@ -128,10 +128,7 @@ async function sendMessage() {
       throw new Error(data.error || 'AI request failed.');
     }
 
-    const rawAnswer =
-  data.result?.response ??
-  data.result?.choices?.[0]?.message?.content ??
-  data.result?.choices?.[0]?.text;
+    const rawAnswer = data.answer;
 
 const answer = typeof rawAnswer === 'string'
   ? rawAnswer
