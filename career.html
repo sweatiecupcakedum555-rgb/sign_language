@@ -128,7 +128,16 @@ async function sendMessage() {
       throw new Error(data.error || 'AI request failed.');
     }
 
-    const answer = data.result?.response;
+    const rawAnswer =
+  data.result?.response ??
+  data.result?.choices?.[0]?.message?.content ??
+  data.result?.choices?.[0]?.text;
+
+const answer = typeof rawAnswer === 'string'
+  ? rawAnswer
+  : Array.isArray(rawAnswer)
+    ? rawAnswer.map(part => part.text || '').join('')
+    : '';
 
     if (!answer) {
       throw new Error('The AI returned an empty response.');
