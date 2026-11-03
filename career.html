@@ -37,16 +37,125 @@ footer{text-align:center;font-size:13px;padding:16px}
 </form><div id="result" class="notice" aria-live="polite"></div>
 </section>
 <section class="card">
-<h2>Part 2 — Chat with the career advisor</h2><p class="muted">Ask questions or add details that the questionnaire did not cover.</p>
-<div class="notice">The chat interface is ready visually. We'll connect it to the AI securely after testing this page.</div>
-<div id="chatLog" aria-live="polite"><div class="bubble assistant">Hello! I'm your Career Advisor. What would you like to explore about work and careers?</div></div>
-<label for="chatInput">Your message</label><textarea id="chatInput" placeholder="For example: I enjoy art but prefer working quietly..."></textarea>
-<div class="actions"><button id="sendBtn" type="button" disabled>Send (AI connection coming next)</button></div>
+<h2>Part 2 — Chat with the career advisor</h2>
+<p class="muted">Ask questions or add details that the questionnaire did not cover.</p>
+
+<div class="notice">
+Your messages are sent to the AI service to generate career suggestions.
+Do not include your name, contact details or private medical information.
+</div>
+
+<div id="chatLog" aria-live="polite">
+<div class="bubble assistant">
+Hello! I'm your Career Advisor. What would you like to explore about work and careers?
+</div>
+</div>
+
+<label for="chatInput">Your message</label>
+<textarea id="chatInput" placeholder="For example: I enjoy art but prefer working quietly..."></textarea>
+
+<div class="actions">
+<button id="sendBtn" type="button">Send</button>
+</div>
 </section>
 <footer>Career suggestions should help you explore possibilities, not limit them. A disability or support need does not automatically rule out a career. Consider discussing important decisions with a trusted adult or qualified career adviser.</footer>
 </main>
 <script>
-const form=document.getElementById('profileForm'), result=document.getElementById('result');
-form.addEventListener('submit',e=>{e.preventDefault();const fields=[['Interests','interests'],['Strengths','strengths'],['Challenges','challenges'],['Preferred environment','environment'],['Helpful tools or support','support'],['Career interests','goals']];result.textContent='Your profile is ready to review:\n\n'+fields.map(([label,id])=>label+': '+(document.getElementById(id).value.trim()||'Not provided')).join('\n\n')+'\n\nThis is only a local preview. No AI analysis has happened yet.';result.style.display='block';result.scrollIntoView({behavior:'smooth',block:'nearest'});});
-document.getElementById('chatInput').addEventListener('input',function(){document.getElementById('sendBtn').disabled=this.value.trim().length===0;});
+
+const form = document.getElementById('profileForm');
+const result = document.getElementById('result');
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+const chatLog = document.getElementById('chatLog');
+
+const WORKER_URL =
+  'https://career-advisor-api.sweatiecupcakedum555.workers.dev/';
+
+form.addEventListener('submit', e => {
+  e.preventDefault();
+
+  const fields = [
+    ['Interests', 'interests'],
+    ['Strengths', 'strengths'],
+    ['Challenges', 'challenges'],
+    ['Preferred environment', 'environment'],
+    ['Helpful tools or support', 'support'],
+    ['Career interests', 'goals']
+  ];
+
+  result.textContent =
+    'Your profile is ready to review:\n\n' +
+    fields.map(([label, id]) =>
+      label + ': ' +
+      (document.getElementById(id).value.trim() || 'Not provided')
+    ).join('\n\n') +
+    '\n\nThis is a local preview.';
+
+  result.style.display = 'block';
+  result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+
+function addMessage(message, className) {
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble ' + className;
+  bubble.textContent = message;
+  chatLog.appendChild(bubble);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+async function sendMessage() {
+  const message = chatInput.value.trim();
+
+  if (!message || sendBtn.disabled) return;
+
+  addMessage(message, 'assistant');
+  chatInput.value = '';
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'Thinking...';
+
+  try {
+    const response = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ message })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'AI request failed.');
+    }
+
+    const answer = data.result?.response;
+
+    if (!answer) {
+      throw new Error('The AI returned an empty response.');
+    }
+
+    addMessage(answer, 'assistant');
+
+  } catch (error) {
+    addMessage(
+      'Sorry, something went wrong. Please try again.',
+      'assistant'
+    );
+    console.error(error);
+
+  } finally {
+    sendBtn.disabled = false;
+    sendBtn.textContent = 'Send';
+  }
+}
+
+sendBtn.addEventListener('click', sendMessage);
+
+chatInput.addEventListener('keydown', event => {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    sendMessage();
+  }
+});
+
 </script></body></html>
