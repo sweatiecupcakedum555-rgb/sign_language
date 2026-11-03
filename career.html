@@ -1,121 +1,179 @@
-
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Career Advisor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Equalix – AI Career Advisor</title>
 
 <style>
-:root{
-  --bg:#07090f;
-  --panel:#10131b;
-  --text:#eef0f7;
-  --muted:#929bad;
-  --accent:#7183e6;
-  --line:#252c3b;
+:root {
+  --bg: #07090f;
+  --panel: #111725;
+  --text: #eef0f7;
+  --muted: #929bad;
+  --accent: #7183e6;
+  --line: #252c3b;
 }
 
-*{box-sizing:border-box;}
-
-html,body{
-  margin:0;
-  width:100%;
-  height:100%;
-  overflow:hidden;
-  background:var(--bg);
-  color:var(--text);
-  font-family:Arial,sans-serif;
+* {
+  box-sizing: border-box;
 }
 
-/* Fixed app container */
-main{
-  position:fixed;
-  inset:0;
-  display:flex;
-  flex-direction:column;
-  padding:10px;
-  overflow:hidden;
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, sans-serif;
 }
 
-header{
-  flex:0 0 auto;
-  text-align:center;
-  padding-bottom:8px;
+/* Main webpage layout */
+main {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  overflow: hidden;
 }
 
-h1{
-  margin:0;
-  font-size:26px;
+/* Title */
+header {
+  flex-shrink: 0;
+  text-align: center;
+  padding: 8px 5px 12px;
 }
 
-/* This is now the ONLY scrollable area */
-#chatLog{
-  flex:1;
-  overflow-y:auto;
-  overflow-x:hidden;
-  -webkit-overflow-scrolling:touch;
-  touch-action:pan-y;
-  background:#111725;
-  border:1px solid var(--line);
-  border-radius:12px;
-  padding:12px;
-  margin-bottom:10px;
+h1 {
+  margin: 0;
+  font-size: 25px;
+  color: #ffffff;
 }
 
-.bubble{
-  padding:10px 13px;
-  border-radius:12px;
-  margin:8px 0;
-  max-width:95%;
-  word-break:break-word;
+/* Conversation area */
+#chatLog {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 9px;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+
+  overflow-wrap: anywhere;
 }
 
-.assistant{
-  background:#171e2c;
-  margin-right:auto;
+/* Chat bubbles */
+.bubble {
+  padding: 11px 13px;
+  border-radius: 12px;
+  margin: 9px 0;
+  max-width: 95%;
+  line-height: 1.55;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
-.user{
-  background:#29345a;
-  margin-left:auto;
+.assistant {
+  background: #192235;
+  color: #eef0f7;
+  margin-right: auto;
 }
 
-.bubble p{
-  margin:5px 0;
+.user {
+  background: #29345a;
+  color: #ffffff;
+  margin-left: auto;
 }
 
-/* Fixed input area */
-.input-area{
-  flex:0 0 auto;
+.bubble p {
+  margin: 5px 0;
 }
 
-textarea{
-  width:100%;
-  height:65px;
-  resize:none;
-  border-radius:10px;
-  border:1px solid var(--line);
-  background:#080b12;
-  color:var(--text);
-  padding:10px;
-  font:inherit;
+/* Privacy warning */
+.privacy-warning {
+  flex-shrink: 0;
+  background: #24202a;
+  border: 1px solid #66543d;
+  border-radius: 10px;
+  padding: 9px 11px;
+  margin-bottom: 9px;
+  color: #f0d9a8;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
-button{
-  width:100%;
-  margin-top:8px;
-  padding:12px;
-  border:none;
-  border-radius:10px;
-  background:var(--accent);
-  color:#101426;
-  font-weight:bold;
-  cursor:pointer;
+.privacy-warning strong {
+  font-size: 13px;
 }
 
-button:disabled{
-  opacity:.6;
+.privacy-warning p {
+  margin: 5px 0 0;
+}
+
+/* Input section */
+.input-area {
+  flex-shrink: 0;
+  width: 100%;
+}
+
+textarea {
+  display: block;
+  width: 100%;
+  height: 65px;
+  resize: none;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #080b12;
+  color: var(--text);
+  padding: 11px;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  outline: none;
+}
+
+textarea:focus {
+  border-color: var(--accent);
+}
+
+textarea::placeholder {
+  color: var(--muted);
+}
+
+/* Send button */
+button {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #101426;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>
 </head>
@@ -124,26 +182,48 @@ button:disabled{
 
 <main>
 
-<header>
-  <h1>AI Career Advisor</h1>
-</header>
+  <header>
+    <h1>Equalix</h1>
+  </header>
 
-<div id="chatLog" aria-live="polite">
-  <div class="bubble assistant">
-    Hello! I'm your Career Advisor. What would you like to explore about work and careers?
+  <div id="chatLog"
+       role="log"
+       aria-live="polite"
+       aria-label="Career Advisor conversation">
   </div>
-</div>
 
-<div class="input-area">
+  <!-- Privacy warning -->
+  <div class="privacy-warning">
+    🔒 <strong>Protect Your Privacy</strong>
 
-<textarea
-  id="chatInput"
-  placeholder="Type your message here..."
-></textarea>
+    <p>
+      Please do not share personal or confidential information
+      such as your full name, home address, phone number,
+      passwords, identification numbers or private medical records.
+    </p>
 
-<button id="sendBtn" type="button">Send</button>
+    <p>
+      You can describe your interests, strengths, challenges
+      and accessibility needs without revealing your identity.
+    </p>
 
-</div>
+    <p>
+      Your privacy matters. Think before you share!
+    </p>
+  </div>
+
+  <!-- Message input -->
+  <div class="input-area">
+    <textarea
+      id="chatInput"
+      placeholder="Ask Equalix about careers..."
+      aria-label="Type your message">
+    </textarea>
+
+    <button id="sendBtn" type="button">
+      Send
+    </button>
+  </div>
 
 </main>
 
@@ -155,6 +235,7 @@ const chatLog = document.getElementById('chatLog');
 const WORKER_URL =
   'https://career-advisor-api.sweatiecupcakedum555.workers.dev/';
 
+/* Display a message */
 function addMessage(message, className) {
   const bubble = document.createElement('div');
   bubble.className = 'bubble ' + className;
@@ -178,76 +259,107 @@ function addMessage(message, className) {
       p.textContent = cleanLine;
       bubble.appendChild(p);
     });
+
   } else {
     bubble.textContent = message;
   }
 
   chatLog.appendChild(bubble);
+
+  /* Move to the latest message */
+  chatLog.scrollTop = chatLog.scrollHeight;
 }
 
+/* Send message to Equalix AI */
 async function sendMessage() {
+
   const message = chatInput.value.trim();
 
-  if (!message || sendBtn.disabled) return;
+  if (!message || sendBtn.disabled) {
+    return;
+  }
 
   addMessage(message, 'user');
 
   chatInput.value = '';
+
   sendBtn.disabled = true;
   sendBtn.textContent = 'Thinking...';
 
   try {
+
     const response = await fetch(WORKER_URL, {
       method: 'POST',
+
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ message })
+
+      body: JSON.stringify({
+        message: message
+      })
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || 'AI request failed.');
+      throw new Error(
+        data.error || 'The AI request failed.'
+      );
     }
 
     const rawAnswer = data.answer;
 
-    const answer = typeof rawAnswer === 'string'
-      ? rawAnswer
-      : Array.isArray(rawAnswer)
-        ? rawAnswer.map(part => part.text || '').join('')
-        : '';
+    const answer =
+      typeof rawAnswer === 'string'
+        ? rawAnswer
+        : Array.isArray(rawAnswer)
+          ? rawAnswer.map(part => part.text || '').join('')
+          : '';
 
     if (!answer.trim()) {
-      throw new Error('The AI returned an empty response.');
+      throw new Error(
+        'The AI returned an empty response.'
+      );
     }
 
     addMessage(answer, 'assistant');
 
   } catch (error) {
-    console.error('Career Advisor error:', error);
+
+    console.error('Equalix error:', error);
 
     addMessage(
-      'Error: ' + error.message,
+      'Sorry, something went wrong: ' + error.message,
       'assistant'
     );
 
   } finally {
+
     sendBtn.disabled = false;
     sendBtn.textContent = 'Send';
+
   }
 }
 
+/* Send button */
 sendBtn.addEventListener('click', sendMessage);
 
-chatInput.addEventListener('keydown', event => {
-  if (event.key === 'Enter' && !event.shiftKey) {
+/* Enter to send, Shift + Enter for a new line */
+chatInput.addEventListener('keydown', function(event) {
+
+  if (
+    event.key === 'Enter' &&
+    !event.shiftKey &&
+    !event.isComposing
+  ) {
     event.preventDefault();
     sendMessage();
   }
+
 });
 </script>
 
 </body>
 </html>
+```
