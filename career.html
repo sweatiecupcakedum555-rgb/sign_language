@@ -95,13 +95,36 @@ form.addEventListener('submit', e => {
   result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 });
 
+
 function addMessage(message, className) {
   const bubble = document.createElement('div');
   bubble.className = 'bubble ' + className;
-  bubble.textContent = message;
+
+  if (className === 'assistant') {
+    const lines = message.split('\n');
+    const formatted = document.createElement('div');
+
+    lines.forEach(line => {
+      const p = document.createElement('p');
+      p.textContent = line
+        .replace(/^#{1,6}\s*/, '')
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/^\s*[-*]\s+/, '• ');
+
+      if (line.trim()) {
+        formatted.appendChild(p);
+      }
+    });
+
+    bubble.appendChild(formatted);
+  } else {
+    bubble.textContent = message;
+  }
+
   chatLog.appendChild(bubble);
   chatLog.scrollTop = chatLog.scrollHeight;
 }
+
 
 async function sendMessage() {
   const message = chatInput.value.trim();
