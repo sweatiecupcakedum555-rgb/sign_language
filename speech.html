@@ -106,6 +106,37 @@
 </main>
 
 <script>
+  const CUSTOM_CENSORED_WORDS = [
+  "sex",
+  "nigga",
+  "goon",
+  "gooning",
+  "做爱",
+  "妈的"
+];
+// Replace custom censored words with asterisks
+function censorCustomWords(text) {
+  let censoredText = text;
+
+  CUSTOM_CENSORED_WORDS.forEach(word => {
+    const escapedWord = word.replace(
+      /[.*+?^${}()|[\]\\]/g,
+      "\\$&"
+    );
+
+    const regex = new RegExp(
+      `\\b${escapedWord}\\b`,
+      "gi"
+    );
+
+    censoredText = censoredText.replace(
+      regex,
+      "*".repeat(word.length)
+    );
+  });
+
+  return censoredText;
+}
 (() => {
   "use strict";
 
@@ -132,7 +163,10 @@
   }
 
   function addTurn(speaker, text, isPartial) {
-    if (!text) return;
+  if (!text) return;
+
+  // Apply custom censorship
+  text = censorCustomWords(text);
 
     if (isPartial) {
       if (!partialElement) {
