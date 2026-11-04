@@ -317,6 +317,8 @@
       processorNode = audioContext.createScriptProcessor(4096, 1, 1);
 
       const wsUrl = new URL("wss://streaming.assemblyai.com/v3/ws");
+      wsUrl.searchParams.set("filter_profanity", "true");
+      wsUrl.searchParams.set("include_partial_turns", "false");
       wsUrl.searchParams.set("sample_rate", "16000");
       wsUrl.searchParams.set("speech_model", "u3-rt-pro");
       wsUrl.searchParams.set("speaker_labels", "true");
